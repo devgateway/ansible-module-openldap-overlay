@@ -37,7 +37,7 @@ try:
 except ImportError:
     HAS_LDAP = False
 
-import traceback, os, stat, subprocess
+import traceback
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
