@@ -46,7 +46,8 @@ def main():
         argument_spec = {
             'config': dict(default = {}, type = 'dict'),
             'overlay': dict(required = True, choices = []), # TODO
-            'state': dict(default = 'present', choices = ['present', 'absent'])
+            'state': dict(default = 'present', choices = ['present', 'absent']),
+            'suffix': dict(required = True)
         },
         supports_check_mode = True
     )
