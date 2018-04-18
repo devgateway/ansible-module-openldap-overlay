@@ -105,6 +105,14 @@ class OpenldapOverlay(object):
 
         return result
 
+    def ensure_absent(self):
+        overlay_exists = bool(self._dn)
+
+        if not self._module.check_mode and overlay_exists:
+            self._connection.delete_s(self._dn)
+
+        return overlay_exists
+
 def main():
     module = AnsibleModule(
         argument_spec = {
