@@ -43,12 +43,16 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
 
 class OpenldapOverlay(object):
+    ATTR_OVERLAY = 'olcOverlay'
+
     def __init__(self, module):
         self._module = module
         self._connection = self._connect()
 
         # find database DN
         database_dn = self._get_database_dn(module.params['suffix'])
+
+        self._dn, self._old_attrs = self._find_overlay(database_dn)
 
     def _connect(self):
         """Connect to slapd thru a socket using EXTERNAL auth."""
@@ -84,6 +88,20 @@ class OpenldapOverlay(object):
             dn = search_results[0][0]
         else:
             raise RuntimeError('Database {} not found'.format(suffix))
+
+        return dn
+
+    def _find_overlay(self, database_dn):
+        search_results = self._connection.search_s(
+            base = database_dn,
+            scope = ldap.SCOPE_ONELEVEL,
+            filterstr = self.__class__.ATTR_OVERLAY
+        )
+
+        if search_results:
+            result = search_results[0]
+        else:
+            result = (None, {})
 
         return result
 
