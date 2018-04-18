@@ -31,6 +31,7 @@ try:
     import ldap
     import ldap.modlist
     import ldap.sasl
+    import ldap.filter
 
     HAS_LDAP = True
 except ImportError:
@@ -40,6 +41,51 @@ import traceback, os, stat, subprocess
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
+
+class OpenldapOverlay(object):
+    def __init__(self, module):
+        self._module = module
+        self._connection = self._connect()
+
+        # find database DN
+        self._dn = self._get_database_dn(module.params['suffix'])
+
+    def _connect(self):
+        """Connect to slapd thru a socket using EXTERNAL auth."""
+
+        # Slapd can only be managed over a local socket
+        connection = ldap.initialize('ldapi:///')
+        try:
+            # bind as Ansible user (default: root)
+            connection.sasl_interactive_bind_s('', ldap.sasl.external())
+        except ldap.LDAPError as e:
+            self._module.fail_json(
+                msg = 'Can\'t bind to local socket',
+                details = to_native(e),
+                exception = traceback.format_exc()
+            )
+
+        return connection
+
+    def _get_database_dn(self, suffix):
+        """Find the DB DN in LDAP."""
+
+        filterstr = '(olcSuffix={})'.format(
+            ldap.filter.escape_filter_chars(suffix)
+        )
+        search_results = self._connection.search_s(
+            base = 'cn=config',
+            scope = ldap.SCOPE_ONELEVEL,
+            filterstr = filterstr,
+            attrlist = ['dn']
+        )
+
+        if search_results:
+            dn = search_results[0][0]
+        else:
+            raise RuntimeError('Database {} not found'.format(suffix))
+
+        return result
 
 def main():
     module = AnsibleModule(
