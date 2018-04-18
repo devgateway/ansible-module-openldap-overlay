@@ -48,7 +48,7 @@ class OpenldapOverlay(object):
         self._connection = self._connect()
 
         # find database DN
-        self._dn = self._get_database_dn(module.params['suffix'])
+        database_dn = self._get_database_dn(module.params['suffix'])
 
     def _connect(self):
         """Connect to slapd thru a socket using EXTERNAL auth."""
@@ -91,7 +91,8 @@ def main():
     module = AnsibleModule(
         argument_spec = {
             'config': dict(default = {}, type = 'dict'),
-            'overlay': dict(required = True, choices = []), # TODO
+            'object_class': dict(required = True),
+            'overlay': dict(required = True),
             'state': dict(default = 'present', choices = ['present', 'absent']),
             'suffix': dict(required = True)
         },
