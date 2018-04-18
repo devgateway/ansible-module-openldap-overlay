@@ -50,9 +50,24 @@ class OpenldapOverlay(object):
         self._connection = self._connect()
 
         # find database DN
-        database_dn = self._get_database_dn(module.params['suffix'])
+        self._database = self._get_database_dn(module.params['suffix'])
 
-        self._dn, self._old_attrs = self._find_overlay(database_dn)
+        self._dn, self._old_attrs = self._find_overlay()
+        self._attrs = self._get_attributes()
+
+    def _get_attributes(self):
+        attrs = {}
+        for name, value in self._module.params['config'].iteritems():
+            type_ = type(value)
+            if type_ is bool:
+                value = ['TRUE'] if value else ['FALSE']
+            elif type_ is not list:
+                value = [value]
+            attrs[name] = value
+
+        attrs['objectClass'] = [self._module.params['object_class']]
+
+        return attrs
 
     def _connect(self):
         """Connect to slapd thru a socket using EXTERNAL auth."""
@@ -91,11 +106,16 @@ class OpenldapOverlay(object):
 
         return dn
 
-    def _find_overlay(self, database_dn):
+    def _find_overlay(self):
+        filterstr = '({}={})'.format(
+            self.__class__.ATTR_OVERLAY,
+            self._module.params['overlay']
+        )
+
         search_results = self._connection.search_s(
-            base = database_dn,
+            base = self._database,
             scope = ldap.SCOPE_ONELEVEL,
-            filterstr = self.__class__.ATTR_OVERLAY
+            filterstr = filterstr
         )
 
         if search_results:
@@ -104,6 +124,29 @@ class OpenldapOverlay(object):
             result = (None, {})
 
         return result
+
+    def ensure_present(self):
+        if self._dn:
+            ldap_function = self._connection.modify_s
+            dn = self._dn
+            modlist = ldap.modlist.modifyModlist(self._old_attrs, self._attrs)
+            # if any changes prepared
+            changed = bool(modlist)
+        else:
+            ldap_function = self._connection.add_s
+            dn = '{}={},{}'.format(
+                self.__class__.ATTR_OVERLAY,
+                self._module.params['overlay'],
+                self._database
+            )
+            modlist = ldap.modlist.addModlist(self._attrs)
+            # creating will always change things
+            changed = True
+
+        if not self._module.check_mode:
+            ldap_function(dn, modlist)
+
+        return changed
 
     def ensure_absent(self):
         overlay_exists = bool(self._dn)
