@@ -30,7 +30,7 @@ options:
       - Values must be either scalars (to be converted to strings), or lists of strings.
   object_class:
     description:
-      - object class of the overlay dynamic configuration, e.g. C(olcMemberOf).
+      - Object class of the overlay dynamic configuration, e.g. C(olcMemberOf).
   overlay:
     description:
       - Overlay name as in C(olcOverlay) attribute.
@@ -50,6 +50,17 @@ requirements:
 '''
 
 EXAMPLES = '''
+---
+- hosts: ldap-servers
+  tasks:
+    - name: Configure overlay
+      openldap_overlay:
+        suffix: dc=example,dc=org
+        overlay: memberof
+        object_class: olcMemberOf
+        config:
+          olcMemberOfDangling: ignore
+          olcMemberOfRefInt: true
 '''
 
 try:
