@@ -54,6 +54,9 @@ class OpenldapOverlay(object):
 
         self._dn, self._old_attrs = self._find_overlay()
         self._attrs = self._get_attributes()
+        # if overlay found, keep its numbered RDN, e.g. olcOverlay={1}ppolicy
+        overlay = self.__class__.ATTR_OVERLAY
+        self._attrs[overlay] = self._old_attrs[overlay]
 
     def _get_attributes(self):
         attrs = {}
