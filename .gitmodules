@@ -1,3 +1,4 @@
 [submodule "debian"]
 	path = debian
 	url = git@github.com:devgateway/openldap-overlay-packaging.git
+	ignore = untracked
