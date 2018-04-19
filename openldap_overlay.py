@@ -14,12 +14,21 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = '''
 ---
 module: openldap_overlay
-short_description: 
+short_description: Configure overlays in OpenLDAP
 description:
+  - This module creates and configures overlays in OpenLDAP.
+  - Deleting overlays is not supported as of OpenLDAP 2.4, but might appear in 2.5.
+  - Standard and custom overlays are supported as long as they use dynamic configuration.
+  - Check mode is supported.
 version_added: null
 author: Development Gateway (@devgateway)
 options:
-notes:
+  config:
+  object_class:
+  overlay:
+  state:
+  suffix:
+notes: null
 requirements:
   - python-ldap
 '''
@@ -56,7 +65,10 @@ class OpenldapOverlay(object):
         self._attrs = self._get_attributes()
         # if overlay found, keep its numbered RDN, e.g. olcOverlay={1}ppolicy
         overlay = self.__class__.ATTR_OVERLAY
-        self._attrs[overlay] = self._old_attrs[overlay]
+        try:
+          self._attrs[overlay] = self._old_attrs[overlay]
+        except KeyError:
+          pass
 
     def _get_attributes(self):
         attrs = {}
