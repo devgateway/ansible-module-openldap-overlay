@@ -24,10 +24,26 @@ version_added: null
 author: Development Gateway (@devgateway)
 options:
   config:
+    description:
+      - Dictionary of overlay configuration options, e.g. C(olcMemberOfRefInt).
+      - Keys must be valid attribute names, typically starting with "olc".
+      - Values must be either scalars (to be converted to strings), or lists of strings.
   object_class:
+    description:
+      - object class of the overlay dynamic configuration, e.g. C(olcMemberOf).
   overlay:
+    description:
+      - Overlay name as in C(olcOverlay) attribute.
   state:
+    description:
+      - Use C(present) to create or update the overlay, or C(absent) to delete.
+      - Delete operation is not supported by OpenLDAP as of v2.4.
+    default: present
+    choices: [absent, present]
   suffix:
+    description:
+      - Database suffix, e.g. C(dc=example,dc=org).
+    required: true
 notes: null
 requirements:
   - python-ldap
