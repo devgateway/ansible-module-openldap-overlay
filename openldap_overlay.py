@@ -74,6 +74,7 @@ except ImportError:
     HAS_LDAP = False
 
 import traceback
+import re
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
@@ -161,7 +162,21 @@ class OpenldapOverlay(object):
         )
 
         if search_results:
-            result = search_results[0]
+            dn = search_results[0][0]
+            raw_attrs = search_results[0][1]
+            attrs = {}
+            for name, value in raw_attrs.iteritems():
+                if name == self.__class__.ATTR_OVERLAY:
+                    # keep ordering prefix of olcOverlay attribute: olcOverlay={0}refint
+                    attrs[name] = raw_attrs[name]
+                else:
+                    # but strip prefixes from other attributes;
+                    # they were retrieved in the right order, and Python lists maintain order
+                    attrs[name] = map(
+                        lambda val: re.sub(r'^{\d+}', '', val, 1),
+                        raw_attrs[name]
+                    )
+            result = (dn, attrs)
         else:
             result = (None, {})
 
