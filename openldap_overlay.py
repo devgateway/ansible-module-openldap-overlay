@@ -91,7 +91,7 @@ class OpenldapOverlay(object):
 
         self._dn, self._old_attrs = self._find_overlay()
         self._attrs = self._get_attributes()
-        # if overlay found, keep its numbered RDN, e.g. olcOverlay={1}ppolicy
+        # if overlay found, keep its x-ordered RDN, e.g. olcOverlay={1}ppolicy
         overlay = self.__class__.ATTR_OVERLAY
         try:
           self._attrs[overlay] = self._old_attrs[overlay]
@@ -99,6 +99,8 @@ class OpenldapOverlay(object):
           pass
 
     def _get_attributes(self):
+        """Format module params as an attribute dictionary."""
+
         attrs = {}
         for name, value in self._module.params['config'].iteritems():
             type_ = type(value)
@@ -150,6 +152,8 @@ class OpenldapOverlay(object):
         return dn
 
     def _find_overlay(self):
+        """Retrieve a tuple of overlay config DN and attributes from LDAP."""
+
         filterstr = '({}={})'.format(
             self.__class__.ATTR_OVERLAY,
             self._module.params['overlay']
@@ -170,7 +174,7 @@ class OpenldapOverlay(object):
                     # keep ordering prefix of olcOverlay attribute: olcOverlay={0}refint
                     attrs[name] = raw_attrs[name]
                 else:
-                    # but strip prefixes from other attributes;
+                    # but strip x-ordered prefixes from other attributes;
                     # they were retrieved in the right order, and Python lists maintain order
                     attrs[name] = map(
                         lambda val: re.sub(r'^{\d+}', '', val, 1),
@@ -183,6 +187,8 @@ class OpenldapOverlay(object):
         return result
 
     def ensure_present(self):
+        """Create or update overlay dynamic configuration object."""
+
         if self._dn:
             ldap_function = self._connection.modify_s
             dn = self._dn
@@ -206,6 +212,8 @@ class OpenldapOverlay(object):
         return changed
 
     def ensure_absent(self):
+        """Attempt to delete a dynamic configuration object."""
+
         overlay_exists = bool(self._dn)
 
         if not self._module.check_mode and overlay_exists:
